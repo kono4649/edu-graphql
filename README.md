@@ -1,1 +1,1 @@
-# edu-graphql2
+# edu-graphql
