@@ -30,6 +30,69 @@ GraphQL の Query・Mutation・Subscription を実際に動かしながら学べ
 | `/learn/mutation` | Mutation を学ぶ |
 | `/learn/subscription` | Subscription を学ぶ |
 
+## 通信経路図
+
+### シーケンス図
+
+```mermaid
+sequenceDiagram
+    participant Browser as ブラウザ (React)
+    participant Backend as バックエンド (FastAPI)
+    participant DB as PostgreSQL
+
+    Note over Browser,Backend: 認証フロー (REST)
+    Browser->>Backend: POST /auth/register または /auth/login
+    Backend-->>Browser: JWT トークン
+
+    Note over Browser,Backend: Query / Mutation (HTTP)
+    Browser->>Backend: POST /graphql (Authorization: Bearer JWT)
+    Backend->>DB: SELECT / INSERT / UPDATE / DELETE
+    DB-->>Backend: 結果
+    Backend-->>Browser: GraphQL レスポンス (JSON)
+
+    Note over Browser,Backend: Subscription (WebSocket)
+    Browser->>Backend: WS /graphql (connection_init + authToken)
+    Backend-->>Browser: connection_ack
+    Browser->>Backend: subscribe { messageAdded }
+    Note over Backend: 別ユーザーが createMessage を実行
+    Backend-->>Browser: next { data: { messageAdded: ... } }
+```
+
+### コンポーネント図
+
+```mermaid
+graph TD
+    subgraph FE["フロントエンド (React + Apollo Client)"]
+        UI[画面コンポーネント]
+        AC[Apollo Client]
+        WS[graphql-ws]
+    end
+
+    subgraph BE["バックエンド (FastAPI + Strawberry)"]
+        AuthREST["/auth/* (REST)"]
+        GQL["/graphql エンドポイント"]
+        JWT[JWT 検証]
+        Resolver["Resolver (Query / Mutation / Subscription)"]
+        PubSub["Pub/Sub (インメモリ)"]
+    end
+
+    subgraph DB["データベース (PostgreSQL)"]
+        Postgres[(DB)]
+    end
+
+    UI -->|useQuery / useMutation| AC
+    UI -->|useSubscription| WS
+    AC -->|HTTP POST| GQL
+    WS -->|WebSocket| GQL
+    Browser -->|POST| AuthREST
+    AuthREST --> JWT
+    GQL --> JWT
+    JWT --> Resolver
+    Resolver -->|read / write| Postgres
+    Resolver -->|publish| PubSub
+    PubSub -->|イベント配信| WS
+```
+
 ## GraphQL スキーマ
 
 ### Query
