@@ -18,6 +18,7 @@ def _to_type(msg: Message) -> MessageType:
     )
 
 
+@strawberry.type
 class MessageQuery:
     @strawberry.field
     async def messages(self, info: Info) -> list[MessageType]:
@@ -29,6 +30,7 @@ class MessageQuery:
         return [_to_type(m) for m in result.scalars().all()]
 
 
+@strawberry.type
 class MessageMutation:
     @strawberry.mutation
     async def create_message(self, info: Info, content: str) -> MessageType:
@@ -46,6 +48,7 @@ class MessageMutation:
         return message_type
 
 
+@strawberry.type
 class MessageSubscription:
     @strawberry.subscription
     async def message_added(self, info: Info) -> AsyncGenerator[MessageType, None]:
