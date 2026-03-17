@@ -10,6 +10,7 @@ def _to_type(todo: Todo) -> TodoType:
     return TodoType(id=strawberry.ID(str(todo.id)), title=todo.title, done=todo.done, user_id=todo.user_id)
 
 
+@strawberry.type
 class TodoQuery:
     @strawberry.field
     async def todos(self, info: Info) -> list[TodoType]:
@@ -22,6 +23,7 @@ class TodoQuery:
         return [_to_type(t) for t in result.scalars().all()]
 
 
+@strawberry.type
 class TodoMutation:
     @strawberry.mutation
     async def create_todo(self, info: Info, title: str) -> TodoType:

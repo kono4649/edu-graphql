@@ -13,6 +13,7 @@ def _to_type(p: UserProgress) -> ProgressType:
     return ProgressType(id=strawberry.ID(str(p.id)), topic=p.topic, completed_at=p.completed_at)
 
 
+@strawberry.type
 class ProgressQuery:
     @strawberry.field
     async def my_progress(self, info: Info) -> list[ProgressType]:
@@ -27,6 +28,7 @@ class ProgressQuery:
         return [_to_type(p) for p in result.scalars().all()]
 
 
+@strawberry.type
 class ProgressMutation:
     @strawberry.mutation
     async def mark_topic_complete(self, info: Info, topic: str) -> ProgressType:
