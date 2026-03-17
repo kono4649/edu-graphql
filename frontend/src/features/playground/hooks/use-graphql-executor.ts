@@ -7,7 +7,7 @@ type OperationType = 'query' | 'mutation' | 'subscription'
 interface UseGraphqlExecutorReturn {
   result: string
   isSubscribed: boolean
-  execute: (query: string, operationType: OperationType) => void
+  execute: (query: string, operationType: OperationType, variables?: Record<string, unknown>) => void
   stopSubscription: () => void
 }
 
@@ -30,7 +30,7 @@ export function useGraphqlExecutor(): UseGraphqlExecutorReturn {
   }, [])
 
   const execute = useCallback(
-    (queryStr: string, operationType: OperationType) => {
+    (queryStr: string, operationType: OperationType, variables?: Record<string, unknown>) => {
       stopSubscription()
       setResult('')
 
@@ -39,7 +39,7 @@ export function useGraphqlExecutor(): UseGraphqlExecutorReturn {
 
       if (detectedType === 'subscription') {
         setIsSubscribed(true)
-        const observable = apolloClient.subscribe({ query: parsedQuery })
+        const observable = apolloClient.subscribe({ query: parsedQuery, variables })
         subscriptionRef.current = observable.subscribe({
           next: (data) => {
             setResult((prev) => {
@@ -58,14 +58,14 @@ export function useGraphqlExecutor(): UseGraphqlExecutorReturn {
 
       if (detectedType === 'mutation') {
         apolloClient
-          .mutate({ mutation: parsedQuery })
+          .mutate({ mutation: parsedQuery, variables })
           .then((data) => setResult(JSON.stringify(data, null, 2)))
           .catch((err: Error) => setResult(`エラー: ${err.message}`))
         return
       }
 
       apolloClient
-        .query({ query: parsedQuery, fetchPolicy: 'no-cache' })
+        .query({ query: parsedQuery, variables, fetchPolicy: 'no-cache' })
         .then((data) => setResult(JSON.stringify(data, null, 2)))
         .catch((err: Error) => setResult(`エラー: ${err.message}`))
     },

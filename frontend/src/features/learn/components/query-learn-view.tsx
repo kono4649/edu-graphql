@@ -32,14 +32,32 @@ query {
 }`,
   },
   {
-    title: '引数付き Query',
-    body: '引数を使ってフィルタリングや検索ができます。',
-    code: `query GetTodo($id: ID!) {
-  todo(id: $id) {
+    title: '引数の渡し方 ① インライン',
+    body: '引数を直接クエリに書き込む方法です。値をそのまま埋め込むので、手軽に試せます。Mutation のサンプルでもこの形式を使っています。',
+    code: `# タイトルを直接指定する例
+mutation {
+  createTodo(title: "買い物リストを作る") {
     id
     title
     done
   }
+}`,
+  },
+  {
+    title: '引数の渡し方 ② 変数（Variables）',
+    body: 'クエリに $変数名 を宣言し、値を「変数パネル」に JSON で渡す方法です。再利用しやすく、Apollo Client での実装にも対応します。Playground の左下にある「変数」エリアに JSON を入力して実行してみましょう。',
+    code: `# クエリ側: $title を宣言する
+mutation CreateTodo($title: String!) {
+  createTodo(title: $title) {
+    id
+    title
+    done
+  }
+}
+
+# 変数パネルに入力する JSON
+{
+  "title": "GraphQL を学ぶ"
 }`,
   },
   {

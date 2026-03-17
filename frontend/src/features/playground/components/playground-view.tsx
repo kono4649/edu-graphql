@@ -15,8 +15,8 @@ const SAMPLE_QUERIES: Record<OperationType, string> = {
     done
   }
 }`,
-  mutation: `mutation {
-  createTodo(title: "GraphQL を学ぶ") {
+  mutation: `mutation CreateTodo($title: String!) {
+  createTodo(title: $title) {
     id
     title
     done
@@ -32,14 +32,39 @@ const SAMPLE_QUERIES: Record<OperationType, string> = {
 }`,
 }
 
+const SAMPLE_VARIABLES: Record<OperationType, string> = {
+  query: '{}',
+  mutation: '{\n  "title": "GraphQL を学ぶ"\n}',
+  subscription: '{}',
+}
+
 export function PlaygroundView() {
   const [operationType, setOperationType] = useState<OperationType>('query')
   const [queryStr, setQueryStr] = useState(SAMPLE_QUERIES.query)
+  const [variablesStr, setVariablesStr] = useState(SAMPLE_VARIABLES.query)
+  const [variablesError, setVariablesError] = useState<string | null>(null)
   const { result, isSubscribed, execute, stopSubscription } = useGraphqlExecutor()
 
   const handleOperationChange = (op: OperationType) => {
     setOperationType(op)
     setQueryStr(SAMPLE_QUERIES[op])
+    setVariablesStr(SAMPLE_VARIABLES[op])
+    setVariablesError(null)
+  }
+
+  const handleExecute = () => {
+    let variables: Record<string, unknown> | undefined
+    const trimmed = variablesStr.trim()
+    if (trimmed && trimmed !== '{}') {
+      try {
+        variables = JSON.parse(trimmed)
+      } catch {
+        setVariablesError('変数の JSON が不正です')
+        return
+      }
+    }
+    setVariablesError(null)
+    execute(queryStr, operationType, variables)
   }
 
   return (
@@ -59,14 +84,37 @@ export function PlaygroundView() {
               接続を切断
             </Button>
           )}
-          <Button size="sm" onClick={() => execute(queryStr, operationType)}>
+          <Button size="sm" onClick={handleExecute}>
             {operationType === 'subscription' ? '接続する' : '実行'}
           </Button>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
-        <QueryEditor value={queryStr} onChange={setQueryStr} />
+        <div className="flex flex-col gap-2 min-h-0">
+          <div className="flex-1 min-h-0">
+            <QueryEditor value={queryStr} onChange={setQueryStr} />
+          </div>
+          <div className="h-36 flex flex-col">
+            <h3 className="text-sm font-medium text-gray-700 mb-1">
+              変数 <span className="text-gray-400 font-normal">(JSON)</span>
+            </h3>
+            <textarea
+              className={`flex-1 w-full font-mono text-sm bg-gray-900 text-gray-100 border rounded-md p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                variablesError ? 'border-red-500' : 'border-gray-300'
+              }`}
+              value={variablesStr}
+              onChange={(e) => {
+                setVariablesStr(e.target.value)
+                setVariablesError(null)
+              }}
+              spellCheck={false}
+            />
+            {variablesError && (
+              <p className="text-xs text-red-500 mt-1">{variablesError}</p>
+            )}
+          </div>
+        </div>
         <ResultDisplay result={result} isSubscribed={isSubscribed} />
       </div>
     </div>
